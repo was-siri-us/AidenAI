@@ -15,12 +15,15 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 const Quiz = () => {
   const API_URL = import.meta.env.VITE_API_URL;
   const [idx, setIdx] = useState(-1);
   const [timeLeft, setTimeLeft] = useState(1800);
+  const [counter, setCounter] = useState(0);
   const [quiz, setQuiz] = useState(null);
+  const [ddQuiz,setDDQuiz] = useState(null);
   const [quizFinished, setQuizFinished] = useState(false);
   const { logout } = useUserContext();
   const navigate = useNavigate();
@@ -36,13 +39,14 @@ const Quiz = () => {
             idx: idx,
             _id: q._id,
             question: q.question,
+            difficulty: q.difficulty,
             options: q.options,
             answer: "",
-            status: "unvisited",
+            status: "unanswered",
           };
         });
         setQuiz(mcqs);
-        console.log(mcqs);
+        // console.log(mcqs);
         setIdx(0);
       } catch (err) {
         console.log(err);
@@ -119,6 +123,65 @@ const Quiz = () => {
     );
   };
 
+  const handleNext = async () => {
+    const data = {
+      _id: quiz[idx]._id,
+      answer: quiz[idx].answer,
+    };
+  
+    try {
+      const res = await fetch(`${API_URL}/api/quiz/optionFeedback`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+      const response = await res.json();
+      setQuiz((prevQuiz) =>
+        prevQuiz.map((q) =>
+          q.idx === idx ? { ...q, status: response.isCorrect} : q
+        )
+      );
+      const currentDifficulty = quiz[idx].difficulty;
+      const unansweredQuestions = quiz.filter(q => q.status === "unanswered");
+      const easyQuestions = unansweredQuestions.filter(q => q.difficulty === "easy");
+      const mediumQuestions = unansweredQuestions.filter(q => q.difficulty === "medium");
+      const hardQuestions = unansweredQuestions.filter(q => q.difficulty === "hard");
+  
+      let nextQuestion = null;
+  
+      if (response.isCorrect) {
+        if (currentDifficulty === "easy") {
+          nextQuestion = mediumQuestions.length ? mediumQuestions[0] : (easyQuestions[0] || hardQuestions[0]);
+        } else if (currentDifficulty === "medium") {
+          nextQuestion = hardQuestions.length ? hardQuestions[0] : (mediumQuestions[0] || easyQuestions[0]);
+        } else {
+          nextQuestion = hardQuestions[0] || mediumQuestions[0] || easyQuestions[0];
+        }
+      } else {
+        if (currentDifficulty === "hard") {
+          nextQuestion = mediumQuestions.length ? mediumQuestions[0] : (hardQuestions[0] || easyQuestions[0]);
+        } else if (currentDifficulty === "medium") {
+          nextQuestion = easyQuestions.length ? easyQuestions[0] : (mediumQuestions[0] || hardQuestions[0]);
+        } else {
+          nextQuestion = easyQuestions[0] || mediumQuestions[0] || hardQuestions[0];
+        }
+      }
+      console.log(idx,response.isCorrect);
+      setCounter(counter + 1);
+      if (nextQuestion) {
+        setIdx(nextQuestion.idx);
+      } else {
+        toast("No more questions available!");
+        setQuizFinished(true);
+      }
+    } catch (err) {
+      toast.error("Something went wrong: " + err);
+    }
+  };
+  
+
   const handleSubmit = () => {
     navigate("/results", { state: { quiz } }); // Navigate to the /results page and pass the quiz data
   };
@@ -159,7 +222,7 @@ const Quiz = () => {
             >
               Clear
             </Button>
-            {idx === quiz?.length - 1 ? (
+            {counter === 14 ? (
               <Dialog>
                 <DialogTrigger className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 mt-10 rounded-md text-sm">
                   Submit
@@ -181,7 +244,7 @@ const Quiz = () => {
                 </DialogContent>
               </Dialog>
             ) : (
-              <Button className="px-7 mt-10" onClick={() => setIdx(idx + 1)}>
+              <Button className="px-7 mt-10" onClick={handleNext}>
                 Next
               </Button>
             )}
@@ -197,10 +260,12 @@ const Quiz = () => {
                     "bg-white border-gray-300": q.status === "unvisited",
                     "bg-yellow-400 border-yellow-500":
                       q.status === "unanswered",
-                    "bg-green-400 border-green-500": q.status === "answered",
+                    "bg-blue-400 border-blue-500": q.status === "answered",
+                    "bg-green-400 border-green-500": q.status === "correct",
+                    "bg-red-400 border-red-500": q.status === "incorrect",
                   }
                 )}
-                onClick={() => setIdx(index)}
+                // onClick={() => setIdx(index)}
               >
                 {index + 1}
               </div>

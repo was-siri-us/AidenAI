@@ -12,11 +12,11 @@ const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 router.get("/start-quiz", async (req, res) => {
   try {
     const apiResponse = await fetch(
-      "https://opentdb.com/api.php?amount=15&type=multiple&category=18"
+      "https://opentdb.com/api.php?amount=15&category=18&type=multiple"
     );
     const apiData = await apiResponse.json();
     const quizQuestions = apiData.results;
-    // console.log(quizQuestions);
+
 
     const formattedQuizQuestions = quizQuestions.map((question) => {
       const questionId = uuidv4();
@@ -83,6 +83,16 @@ router.post("/results", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+
+router.post("/optionFeedback", async (req, res) => {
+  const answer = req.body;
+  const question = await Question.findById(answer._id);
+  if (question.correctAnswer === answer.answer) {
+    res.send({isCorrect:"correct"});
+  } else {
+    res.send({isCorrect:"incorrect"});
+  }
+})
 
 function shuffleArray(array) {
   for (let i = array.length - 1; i > 0; i--) {

@@ -20,7 +20,7 @@ const Navbar = ({ time,exit }) => {
     <div className="h-[60px] w-full bg-white border-b-2 border-grey p-3 flex items-center gap-3 fixed top-0 z-50">
       <img src={logo} alt="CausalFunnel" className="h-[25px]" />
       <div className="text-black text-2xl font-bold font-mono">
-        CausalFunnel
+        Aiden.ai
       </div>
       {time && (
         
