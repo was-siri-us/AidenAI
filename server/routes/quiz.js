@@ -3,6 +3,12 @@ const router = express.Router();
 const Question = require("../models/Question");
 const { v4: uuidv4 } = require("uuid");
 
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
 router.get("/start-quiz", async (req, res) => {
   try {
     const apiResponse = await fetch(
@@ -65,7 +71,13 @@ router.post("/results", async (req, res) => {
       });
     }
 
-    res.send({ score, report });
+    const prompt =
+      "Analyze the following results for the quiz and provide a brief 2 line summary suggesting topics for revision" +
+      JSON.stringify(report);
+
+    const result = await model.generateContent(prompt);
+
+    res.send({ score, report,AiGeneratedReport:result.response.text() });
   } catch (err) {
     console.log(err);
     res.status(500).send("Internal Server Error");

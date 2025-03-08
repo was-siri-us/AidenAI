@@ -11,6 +11,7 @@ const Results = () => {
   const { quiz } = location.state;
   const { user } = useUserContext();
   const [quote, setQuote] = useState(null);
+  const [AiGeneratedReport, setAiGeneratedReport] = useState(null);
   const [report, setReport] = useState(null);
   const API_URL = import.meta.env.VITE_API_URL;
   const [score, setScore] = useState(0);
@@ -28,6 +29,7 @@ const Results = () => {
         const data = await res.json();
         setReport(data);
         setScore(data.score);
+        setAiGeneratedReport(data.AiGeneratedReport);
 
       } catch (err) {
         console.log(err);
@@ -54,6 +56,15 @@ const Results = () => {
                   <CircularProgress color="success" size="md" determinate value={100* score/report.report.length}>{score}/{report.report.length}</CircularProgress>
                 </h1>
               </div>
+
+
+              <div
+                  className="bg-white rounded-md p-5 m-2 md:w-[50%] flex flex-col items-center w-[95%]"
+                >
+                <h1 className="text-lg font-bold text-slate-500">AI Generated Feedback</h1>
+                <p className="text-md">{AiGeneratedReport}</p>
+              </div>
+              <h1 className="text-lg font-bold text-slate-500">Review</h1>
               {report.report.map((q, idx) => (
                 <div
                   key={idx}

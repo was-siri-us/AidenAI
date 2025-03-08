@@ -7,6 +7,8 @@ export const useUserContext = () => {
   return useContext(UserContext);
 };
 
+
+//AUTHENTICATION
 export const UserProvider = ({ children }) => {
   const storedUser = JSON.parse(localStorage.getItem("user"));
   const [user, setUser] = useState(
